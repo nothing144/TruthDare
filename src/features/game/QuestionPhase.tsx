@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { motion } from 'framer-motion';
 import { useGameStore } from '../../store/useGameStore';
-import type { Round, Player } from '../../types';
+import type { Round } from '../../types';
 import { supabase } from '../../lib/supabase';
 import { Send, Clock } from 'lucide-react';
 
@@ -67,7 +67,7 @@ export default function QuestionPhase({ currentRound }: Props) {
     }).eq('id', room.id);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!question.trim() || !room || !currentRound) return;
     
@@ -95,7 +95,7 @@ export default function QuestionPhase({ currentRound }: Props) {
     }
   };
 
-  if (!victim || !questioner) return null;
+  if (!victim || !questioner || !currentRound) return null;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[var(--color-background)] overflow-hidden relative">

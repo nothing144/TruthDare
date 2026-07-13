@@ -1,7 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useGameStore } from '../../store/useGameStore';
-import type { Round, Player } from '../../types';
+import type { Round } from '../../types';
 import { supabase } from '../../lib/supabase';
 import { Send, Clock, FastForward } from 'lucide-react';
 

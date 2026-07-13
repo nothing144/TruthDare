@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, type FormEvent } from 'react';
 import { motion } from 'framer-motion';
 import { useGameStore } from '../../store/useGameStore';
 import type { Round } from '../../types';
@@ -33,7 +33,7 @@ export default function AnswerReviewPhase({ currentRound }: Props) {
         .select('message')
         .eq('room_id', room.id)
         .eq('phase', 'final_question')
-        .gte('created_at', currentRound.created_at)
+        .gte('created_at', currentRound!.created_at)
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
@@ -46,7 +46,7 @@ export default function AnswerReviewPhase({ currentRound }: Props) {
         .select('message')
         .eq('room_id', room.id)
         .eq('phase', 'truth_answer')
-        .gte('created_at', currentRound.created_at)
+        .gte('created_at', currentRound!.created_at)
         .order('created_at', { ascending: false })
         .limit(1)
         .single();
@@ -91,7 +91,7 @@ export default function AnswerReviewPhase({ currentRound }: Props) {
         .select('*')
         .eq('room_id', room.id)
         .eq('phase', 'answer_review')
-        .gte('created_at', currentRound.created_at)
+        .gte('created_at', currentRound!.created_at)
         .order('created_at', { ascending: true });
       if (data) setMessages(data);
     };
@@ -131,7 +131,7 @@ export default function AnswerReviewPhase({ currentRound }: Props) {
     }
   };
 
-  const sendMessage = async (e: React.FormEvent) => {
+  const sendMessage = async (e: FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !room || !currentPlayer) return;
 

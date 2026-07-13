@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useGameStore } from '../../store/useGameStore';
 import { supabase } from '../../lib/supabase';
 import type { Round } from '../../types';
@@ -42,7 +42,7 @@ export default function GameManager() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'rounds', filter: `room_id=eq.${room.id}` },
-        (payload) => {
+        (_payload) => {
           fetchRound();
         }
       )

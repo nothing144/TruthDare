@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useGameStore } from '../../store/useGameStore';
 import type { Round } from '../../types';
 import { supabase } from '../../lib/supabase';
 import { ThumbsUp, ThumbsDown, Loader, Clock } from 'lucide-react';
-import { startNextRound } from './gameLogic';
+
 
 interface Props {
   currentRound: Round | null;

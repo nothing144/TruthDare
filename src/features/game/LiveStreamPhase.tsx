@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useGameStore } from '../../store/useGameStore';
 import type { Round } from '../../types';
@@ -33,7 +33,7 @@ export default function LiveStreamPhase({ currentRound }: Props) {
 
   useEffect(() => {
     if (isVictim && !localStream && !cameraError) {
-      startCamera().catch(err => {
+      startCamera().catch(_err => {
         setCameraError('Please allow camera access to complete the dare.');
       });
     }
