@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #0a0a0f;
+  --color-surface: #13131a;
+  --color-surface-hover: #1c1c26;
+  --color-primary: #b026ff; /* Neon Purple */
+  --color-secondary: #4f46e5; /* Indigo */
+  --color-accent: #00f0ff; /* Cyan */
+  
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: #f3f4f6;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  /* Custom Scrollbar for dark theme */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-background);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-surface-hover);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-primary);
+  }
+}
+
+@layer utilities {
+  .text-glow-primary {
+    text-shadow: 0 0 10px rgba(176, 38, 255, 0.5), 0 0 20px rgba(176, 38, 255, 0.3);
+  }
+  .text-glow-accent {
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.5), 0 0 20px rgba(0, 240, 255, 0.3);
+  }
+  .box-glow-primary {
+    box-shadow: 0 0 15px rgba(176, 38, 255, 0.2), 0 0 30px rgba(176, 38, 255, 0.1);
+  }
+  .glass-panel {
+    background: rgba(19, 19, 26, 0.7);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+}
