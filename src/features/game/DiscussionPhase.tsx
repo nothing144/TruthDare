@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useGameStore } from '../../store/useGameStore';
 import type { Round } from '../../types';
 import { supabase } from '../../lib/supabase';
-import { Send, Clock, FastForward } from 'lucide-react';
+import { Send, Clock } from 'lucide-react';
 
 interface Props {
   currentRound: Round | null;
@@ -164,8 +164,7 @@ export default function DiscussionPhase({ currentRound }: Props) {
                 onClick={handleEndDiscussion}
                 className="flex items-center gap-2 bg-[var(--color-primary)] hover:bg-purple-600 px-4 py-2 rounded-xl text-white font-bold transition-all"
               >
-                <FastForward size={18} />
-                Ready
+                Go to Write Question
               </button>
             )}
           </div>
@@ -176,10 +175,16 @@ export default function DiscussionPhase({ currentRound }: Props) {
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-gray-500 text-center">
               <p>No messages yet.</p>
-              <p className="text-sm">Start discussing the {currentRound?.type}!</p>
-              {isQuestioner && (
-                <p className="text-sm mt-4 text-[var(--color-primary)]">You have the final say and will write the question.</p>
-              )}
+              <p className="text-sm mb-4">Start discussing the {currentRound?.type}!</p>
+              <div className="bg-[var(--color-primary)]/20 border border-[var(--color-primary)]/50 px-6 py-3 rounded-xl mt-4">
+                <p className="text-[var(--color-primary)] font-bold text-lg">
+                  {isQuestioner ? (
+                    "You have the power! You will write the final question."
+                  ) : (
+                    `${questioner.name} has the power to write the final question.`
+                  )}
+                </p>
+              </div>
             </div>
           ) : (
             messages.map((msg) => {

@@ -272,7 +272,7 @@ export default function RoomManager() {
                 ) : (
                   <Play fill="currentColor" size={20} />
                 )}
-                {isStarting ? 'Starting...' : 'Start Next Round'}
+                {isStarting ? 'Starting...' : 'Spin Bottle'}
               </button>
             ) : (
               <div className="text-center p-6 bg-black/40 border border-gray-700/50 rounded-xl flex flex-col items-center gap-4">
