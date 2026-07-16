@@ -12,8 +12,9 @@ export default function SpinnerPhase({ currentRound }: Props) {
   const { room, players, currentPlayer } = useGameStore();
   const [spinning, setSpinning] = useState(true);
 
-  // The victim name to show
+  // The victim and questioner to show
   const victim = players.find(p => p.id === currentRound?.victim_id);
+  const questioner = players.find(p => p.id === currentRound?.questioner_id);
 
   useEffect(() => {
     if (!currentRound || !room) return;
@@ -127,16 +128,21 @@ export default function SpinnerPhase({ currentRound }: Props) {
         </div>
       </div>
 
-      {!spinning && (
+      {!spinning && questioner && (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.5 }}
-          className="mt-16 text-2xl font-medium text-gray-300 text-center z-10"
+          className="mt-16 text-2xl font-medium text-gray-300 text-center z-10 space-y-2"
         >
-          {currentPlayer?.id === victim.id
-            ? <span className="text-[var(--color-accent)] font-bold">Get ready to choose...</span>
-            : `${victim.name} is about to choose Truth or Dare...`}
+          <p>
+            <span className="text-[var(--color-primary)] font-bold">{questioner.name}</span> will ask the question!
+          </p>
+          <p>
+            {currentPlayer?.id === victim.id
+              ? <span className="text-[var(--color-accent)] font-bold">Get ready to choose...</span>
+              : `${victim.name} is choosing Truth or Dare...`}
+          </p>
         </motion.div>
       )}
     </div>
