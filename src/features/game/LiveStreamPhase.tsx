@@ -1,57 +1,91 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useGameStore } from '../../store/useGameStore';
 import type { Round } from '../../types';
 import { supabase } from '../../lib/supabase';
-import { Clock, Video, VideoOff, CheckCircle } from 'lucide-react';
-import { useWebRTC } from '../../hooks/useWebRTC';
+import { Clock, VideoOff, CheckCircle } from 'lucide-react';
+import {
+  LiveKitRoom,
+  VideoTrack,
+  RoomAudioRenderer,
+  useTracks,
+  useConnectionState,
+} from '@livekit/components-react';
+import { Track, ConnectionState } from 'livekit-client';
+
+// @ts-ignore
+import '@livekit/components-styles';
 
 interface Props {
   currentRound: Round | null;
 }
 
+function Stage({ victimName }: { victimName: string }) {
+  const connectionState = useConnectionState();
+  const tracks = useTracks([
+    { source: Track.Source.Camera, withPlaceholder: false },
+  ]);
+
+  if (connectionState === ConnectionState.Disconnected || connectionState === ConnectionState.Connecting) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center text-gray-500">
+        <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2 }}>
+          <div className="w-16 h-16 rounded-full border-4 border-t-[var(--color-primary)] border-gray-800 animate-spin mb-4" />
+        </motion.div>
+        <p className="text-xl">Connecting to secure stream...</p>
+      </div>
+    );
+  }
+
+  if (tracks.length === 0) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center text-gray-500">
+        <VideoOff size={48} className="mb-4 opacity-50" />
+        <p className="text-xl">Waiting for {victimName}'s camera...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full h-full relative">
+      <VideoTrack trackRef={tracks[0] as any} className="w-full h-full object-cover" />
+      <RoomAudioRenderer />
+    </div>
+  );
+}
+
 export default function LiveStreamPhase({ currentRound }: Props) {
   const { room, players, currentPlayer, serverTimeOffset } = useGameStore();
   const [timeLeft, setTimeLeft] = useState(30); 
-  const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
-  const [cameraError, setCameraError] = useState('');
-  
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [token, setToken] = useState('');
+  const [error, setError] = useState('');
   
   const victim = players.find(p => p.id === currentRound?.victim_id);
   const questioner = players.find(p => p.id === currentRound?.questioner_id);
   const isVictim = currentPlayer?.id === victim?.id;
   const isQuestioner = currentPlayer?.id === questioner?.id;
 
-  const { localStream, startCamera } = useWebRTC({
-    roomId: room?.id || '',
-    isVictim,
-    onRemoteStream: (stream) => {
-      setRemoteStream(stream);
-    }
-  });
-
+  // Fetch LiveKit Token
   useEffect(() => {
-    if (isVictim && !localStream && !cameraError) {
-      startCamera().catch(_err => {
-        setCameraError('Please allow camera access to complete the dare.');
-      });
-    }
-  }, [isVictim, localStream, cameraError, startCamera]);
-
-  useEffect(() => {
-    if (videoRef.current) {
-      if (isVictim && localStream) {
-        videoRef.current.srcObject = localStream;
-      } else if (!isVictim && remoteStream) {
-        videoRef.current.srcObject = remoteStream;
+    if (!room?.id || !currentPlayer?.id) return;
+    
+    const fetchToken = async () => {
+      try {
+        const res = await fetch(`/.netlify/functions/livekit-token?room=${room.id}&participant=${currentPlayer.id}&isVictim=${isVictim}`);
+        if (!res.ok) throw new Error('Failed to fetch streaming token');
+        const data = await res.json();
+        setToken(data.token);
+      } catch (err) {
+        console.error(err);
+        setError('Could not connect to streaming server.');
       }
-    }
-  }, [isVictim, localStream, remoteStream]);
+    };
+    fetchToken();
+  }, [room?.id, currentPlayer?.id, isVictim]);
 
-  // When stream starts, victim extends timer to 300 seconds
+  // When stream starts (token acquired and room entered), victim extends timer to 300 seconds
   useEffect(() => {
-    if (isVictim && localStream && room?.phase_duration_seconds === 30) {
+    if (isVictim && token && room?.phase_duration_seconds === 30) {
       supabase.from('rooms').update({
         phase_started_at: Date.now() - serverTimeOffset,
         phase_duration_seconds: 300
@@ -59,7 +93,7 @@ export default function LiveStreamPhase({ currentRound }: Props) {
         if (error) console.error("Error updating stream duration:", error);
       });
     }
-  }, [isVictim, localStream, room?.id, room?.phase_duration_seconds]);
+  }, [isVictim, token, room?.id, room?.phase_duration_seconds, serverTimeOffset]);
 
   const hasStreamStarted = room?.phase_duration_seconds === 300;
   const timeElapsed = room?.phase_started_at ? ((Date.now() - serverTimeOffset) - room.phase_started_at) / 1000 : 0;
@@ -106,9 +140,6 @@ export default function LiveStreamPhase({ currentRound }: Props) {
     try {
       await supabase.from('players').update({ score: victim.score - 5 }).eq('id', victim.id);
       await supabase.from('rounds').update({ status: 'cancelled' }).eq('id', currentRound.id);
-      
-      // Go to voting anyway? Or just cancel round and spin again?
-      // Since dare failed, they lose points, let's just go back to lobby/spinning
       await supabase.from('rooms').update({ status: 'waiting', current_phase: 'waiting' }).eq('id', room.id);
     } catch (err) {
       console.error(err);
@@ -136,6 +167,8 @@ export default function LiveStreamPhase({ currentRound }: Props) {
   };
 
   if (!victim || !questioner) return null;
+
+  const livekitUrl = import.meta.env.VITE_LIVEKIT_URL;
 
   return (
     <div className="min-h-screen flex flex-col p-4 sm:p-8 bg-black h-screen overflow-hidden">
@@ -177,28 +210,27 @@ export default function LiveStreamPhase({ currentRound }: Props) {
 
         {/* Video Area */}
         <div className="flex-1 bg-black relative flex items-center justify-center">
-          {cameraError ? (
+          {error ? (
             <div className="text-center text-red-500 p-8">
               <VideoOff size={48} className="mx-auto mb-4 opacity-50" />
-              <p className="text-xl">{cameraError}</p>
+              <p className="text-xl">{error}</p>
             </div>
-          ) : (isVictim && !localStream) || (!isVictim && !remoteStream) ? (
-            <div className="text-center text-gray-500 flex flex-col items-center">
-              <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 2 }}>
-                <Video size={48} className="mb-4 text-[var(--color-primary)] opacity-50" />
-              </motion.div>
-              <p className="text-xl">Connecting secure feed...</p>
-              {!isVictim && <p className="text-sm mt-2">Waiting for {victim.name}'s camera... ({timeLeft}s left to start)</p>}
+          ) : !token ? (
+            <div className="text-center text-gray-500">
+              <div className="w-16 h-16 rounded-full border-4 border-t-[var(--color-primary)] border-gray-800 animate-spin mx-auto mb-4" />
+              <p className="text-xl">Initializing stream...</p>
             </div>
-          ) : null}
-
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted={isVictim} // Mute local video to prevent echo
-            className={`w-full h-full object-cover transition-opacity duration-500 ${(isVictim && localStream) || (!isVictim && remoteStream) ? 'opacity-100' : 'opacity-0'}`}
-          />
+          ) : (
+            <LiveKitRoom
+              video={isVictim}
+              audio={isVictim}
+              token={token}
+              serverUrl={livekitUrl}
+              className="w-full h-full"
+            >
+              <Stage victimName={victim.name} />
+            </LiveKitRoom>
+          )}
         </div>
       </div>
     </div>
