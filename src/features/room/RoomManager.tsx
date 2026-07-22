@@ -30,9 +30,8 @@ export default function RoomManager() {
 
         if (roomError || !roomData) throw new Error('Room not found');
         
-        // Compute offset between client time and server time
-        const serverTime = new Date(roomData.last_activity).getTime();
-        setServerTimeOffset(Date.now() - serverTime);
+        // Assume client clock is roughly accurate (or fetch true server time via RPC if needed)
+        setServerTimeOffset(0);
         
         setRoom(roomData);
 
